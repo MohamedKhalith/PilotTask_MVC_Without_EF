@@ -1,0 +1,62 @@
+﻿@model System.Data.DataTable
+
+@{
+    ViewData["Title"] = "Profile";
+}
+
+<div class="jumbotron">
+    <h1 class="text-center">@ViewData["Title"]</h1>
+</div>
+
+<p>
+    <a asp-action="AddOrEdit">Create New Profile</a>
+</p>
+<table class="table table-bordered">
+    <thead class="thead-light">
+        <tr>
+            <th>
+                FirstName
+            </th>
+            <th>
+               LastName
+            </th>
+            <th>
+                DateOfBirth
+            </th>
+            <th>
+                PhoneNumber
+            </th>
+            <th>
+                EmailId
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @for (int i = 0; i < Model.Rows.Count; i++)
+        {
+            <tr>
+                <td>
+                    @Model.Rows[i]["FirstName"]
+                </td>
+                <td>
+                    @Model.Rows[i]["LastName"]
+                </td>
+                <td>
+                    @Model.Rows[i]["DateOfBirth"]
+                </td>
+                <td>
+                    @Model.Rows[i]["PhoneNumber"]
+                </td>
+                <td>
+                    @Model.Rows[i]["EmailId"]
+                </td>
+                <td>
+                    <a asp-action="AddOrEdit" asp-route-id="@Model.Rows[i]["ProfileId"]">Edit</a> |
+                    <a asp-action="Delete" asp-route-id="@Model.Rows[i]["ProfileId"]">Delete</a> |
+                    <a asp-controller="Task" asp-action="Index" asp-route-id="@Model.Rows[i]["ProfileId"]">View Task</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,61 @@
+﻿@model System.Data.DataTable
+
+@{
+    ViewData["Title"] = "Task";
+}
+
+<div class="jumbotron">
+    <h1 class="text-center">@ViewData["Title"]</h1>
+</div>
+
+<p>
+    <a asp-action="AddOrEdit">Create New Profile</a>
+</p>
+<table class="table table-bordered">
+    <thead class="thead-light">
+        <tr>
+            <th>
+                ProfileId
+            </th>
+            <th>
+                TaskName
+            </th>
+            <th>
+                TaskDescription
+            </th>
+            <th>
+                StartTime
+            </th>
+            <th>
+                Status
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @for (int i = 0; i < Model.Rows.Count; i++)
+        {
+            <tr>
+                <td>
+                    @Model.Rows[i]["ProfileId"]
+                </td>
+                <td>
+                    @Model.Rows[i]["TaskName"]
+                </td>
+                <td>
+                    @Model.Rows[i]["TaskDescription"]
+                </td>
+                <td>
+                    @Model.Rows[i]["StartTime"]
+                </td>
+                <td>
+                    @Model.Rows[i]["Status"]
+                </td>
+                <td>
+                    <a asp-action="AddOrEdit" asp-route-id="@Model.Rows[i]["Id"]">Edit</a> |
+                    <a asp-action="Delete" asp-route-id="@Model.Rows[i]["Id"]">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
