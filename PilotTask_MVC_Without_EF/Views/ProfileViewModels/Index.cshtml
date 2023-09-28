@@ -1,4 +1,4 @@
-﻿@model System.Data.DataTable
+﻿@model IEnumerable<PilotTask_MVC_Without_EF.Models.ProfileViewModel>
 
 @{
     ViewData["Title"] = "Profile";
@@ -18,7 +18,7 @@
                 FirstName
             </th>
             <th>
-               LastName
+                LastName
             </th>
             <th>
                 DateOfBirth
@@ -33,7 +33,7 @@
         </tr>
     </thead>
     <tbody>
-        @for (int i = 0; i < Model.Rows.Count; i++)
+        @*@for (int i = 0; i < Model.Count(); i++)
         {
             <tr>
                 <td>
@@ -55,6 +55,36 @@
                     <a asp-action="AddOrEdit" asp-route-id="@Model.Rows[i]["ProfileId"]">Edit</a> |
                     <a asp-action="Delete" asp-route-id="@Model.Rows[i]["ProfileId"]">Delete</a> |
                     <a asp-controller="Task" asp-action="Index" asp-route-id="@Model.Rows[i]["ProfileId"]">View Task</a>
+                </td>
+            </tr>
+        }*@
+
+
+
+
+
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @item.FirstName
+                </td>
+                <td>
+                    @item.LastName
+                </td>
+                <td>
+                    @item.DateOfBirth
+                </td>
+                <td>
+                    @item.PhoneNumber
+                </td>
+                <td>
+                    @item.EmailId 
+                </td>
+                <td>
+                    <a asp-action="AddOrEdit" asp-route-id="@item.ProfileId">Edit</a> |
+                    <a asp-action="Delete" asp-route-id="@item.ProfileId">Delete</a> |
+                    <a asp-controller="Task" asp-action="Index" asp-route-id="@item.ProfileId">View Task</a>
                 </td>
             </tr>
         }

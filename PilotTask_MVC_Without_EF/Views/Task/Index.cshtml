@@ -1,4 +1,4 @@
-﻿@model System.Data.DataTable
+﻿@model IEnumerable<PilotTask_MVC_Without_EF.Models.TaskViewModel>
 
 @{
     ViewData["Title"] = "Task";
@@ -33,27 +33,27 @@
         </tr>
     </thead>
     <tbody>
-        @for (int i = 0; i < Model.Rows.Count; i++)
+        @foreach (var item in Model)
         {
             <tr>
                 <td>
-                    @Model.Rows[i]["ProfileId"]
+                    @item.ProfileId
                 </td>
                 <td>
-                    @Model.Rows[i]["TaskName"]
+                    @item.TaskName
                 </td>
                 <td>
-                    @Model.Rows[i]["TaskDescription"]
+                    @item.TaskDescription
                 </td>
                 <td>
-                    @Model.Rows[i]["StartTime"]
+                    @item.StartTime
                 </td>
                 <td>
-                    @Model.Rows[i]["Status"]
+                    @item.Status
                 </td>
                 <td>
-                    <a asp-action="AddOrEdit" asp-route-id="@Model.Rows[i]["Id"]">Edit</a> |
-                    <a asp-action="Delete" asp-route-id="@Model.Rows[i]["Id"]">Delete</a>
+                    <a asp-action="AddOrEdit" asp-route-id="@item.Id">Edit</a> |
+                    <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
                 </td>
             </tr>
         }

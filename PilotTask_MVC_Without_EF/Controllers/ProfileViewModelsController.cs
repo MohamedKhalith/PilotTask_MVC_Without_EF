@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Data;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using PilotTask_MVC_Without_EF.DAL;
 using PilotTask_MVC_Without_EF.Models;
 
 namespace PilotTask_MVC_Without_EF.Controllers
@@ -13,83 +12,81 @@ namespace PilotTask_MVC_Without_EF.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger<ProfileViewModelsController> _logger;
-        public ProfileViewModelsController(IConfiguration configuration, ILogger<ProfileViewModelsController> logger)
+        private IProfileDataAccess _profileDataAccess;
+        public ProfileViewModelsController(IConfiguration configuration, ILogger<ProfileViewModelsController> logger, IProfileDataAccess profileDataAccess)
         {
             _configuration = configuration;
             _logger = logger;
+            _profileDataAccess = profileDataAccess;
         }
 
-        // GET: ProfileViewModels
-        public IActionResult Index()
+        /// <summary>
+        /// Index
+        /// </summary>
+        /// <returns></returns>
+        public async Task<ActionResult> Index()
         {
             try
             {
-                DataTable dtbl = new DataTable();
-                using (SqlConnection sqlConnection = new SqlConnection(_configuration.GetConnectionString("Pilot_Task_ConnectionString")))
-                {
-                    sqlConnection.Open();
-                    SqlDataAdapter sqlDa = new SqlDataAdapter("ProfileViewAll", sqlConnection);
-                    sqlDa.SelectCommand.CommandType = CommandType.StoredProcedure;
-                    sqlDa.Fill(dtbl);
-                }
-                return View(dtbl);
+                _logger.LogDebug($"Started method for Getting all Profile from Database");
+                var response = await _profileDataAccess.GetAllProfile();
+                _logger.LogDebug($"Started method for Getting all Profile from Database");
+                return View(response);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception error");
+                _logger.LogError(ex, "Exception error getting from Index Method");
                 throw;
             }
         }
 
-        // GET: ProfileViewModels/AddOrEdit/5
-        public IActionResult AddOrEdit(int? id)
+        /// <summary>
+        /// AddOrEdit
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<IActionResult> AddOrEdit(int? id)
         {
             try
             {
+                _logger.LogDebug($"Started method for Getting specific Profile by Id : {id}");
                 ProfileViewModel profileViewModel = new ProfileViewModel();
                 if (id > 0)
-                    profileViewModel = FetchBookByID(id);
+                    profileViewModel =await _profileDataAccess.FetchBookByID(id);
+                _logger.LogDebug($"Ended method for Getting specific Profile by Id : {id}");
                 return View(profileViewModel);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception error");
+                _logger.LogError(ex, "Exception error getting from AddOrEdit Method");
                 throw;
             }
-
         }
 
-        // POST: ProfileViewModels/AddOrEdit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        /// <summary>
+        /// AddOrEdit
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="profileViewModel"></param>
+        /// <returns></returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult AddOrEdit(int id, [Bind("ProfileId,FirstName,LastName,DateOfBirth,PhoneNumber,EmailId")] ProfileViewModel profileViewModel)
         {
             try
             {
+                _logger.LogDebug($"Started method for Create or edit Profile by Request body : {profileViewModel}");
                 if (ModelState.IsValid)
                 {
-                    using (SqlConnection sqlConnection = new SqlConnection(_configuration.GetConnectionString("Pilot_Task_ConnectionString")))
-                    {
-                        sqlConnection.Open();
-                        SqlCommand sqlCmd = new SqlCommand("ProfileAddOrEdit", sqlConnection);
-                        sqlCmd.CommandType = CommandType.StoredProcedure;
-                        sqlCmd.Parameters.AddWithValue("ProfileId", profileViewModel.ProfileId);
-                        sqlCmd.Parameters.AddWithValue("FirstName", profileViewModel.FirstName);
-                        sqlCmd.Parameters.AddWithValue("LastName", profileViewModel.LastName);
-                        sqlCmd.Parameters.AddWithValue("PhoneNumber", profileViewModel.PhoneNumber);
-                        sqlCmd.Parameters.AddWithValue("EmailId", profileViewModel.EmailId);
-                        sqlCmd.Parameters.AddWithValue("DateOfBirth", profileViewModel.DateOfBirth);
-                        sqlCmd.ExecuteNonQuery();
-                    }
+                    _profileDataAccess.CreateOrUpdate(profileViewModel);
+                    _logger.LogDebug($"Ended method for Create or edit Profile by Request body : {profileViewModel}");
                     return RedirectToAction(nameof(Index));
                 }
                 return View(profileViewModel);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception error");
+                _logger.LogError(ex, "Exception error getting from AddOrEdit Method");
                 throw;
             }
         }
@@ -100,51 +97,26 @@ namespace PilotTask_MVC_Without_EF.Controllers
             return View();
         }
 
-        // POST: ProfileViewModels/Delete/5
+        /// <summary>
+        /// DeleteConfirmed
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public  IActionResult DeleteConfirmed(int id)
+        public IActionResult DeleteConfirmed(int id)
         {
             try
             {
-                using (SqlConnection sqlConnection = new SqlConnection(_configuration.GetConnectionString("Pilot_Task_ConnectionString")))
-                {
-                    sqlConnection.Open();
-                    SqlCommand sqlCmd = new SqlCommand("ProfileDeleteByID", sqlConnection);
-                    sqlCmd.CommandType = CommandType.StoredProcedure;
-                    sqlCmd.Parameters.AddWithValue("ProfileId", id);
-                    sqlCmd.ExecuteNonQuery();
-                }
+                _logger.LogDebug($"Started method for Delete Profile by Request body : {id}");
+                _profileDataAccess.DeleteProfileById(id);
+                _logger.LogDebug($"Ended method for Delete Profile by Request body : {id}");
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception error");
+                _logger.LogError(ex, "Exception error getting from DeleteConfirmed Method");
                 throw;
-            }
-        }
-        [NonAction]
-        public ProfileViewModel FetchBookByID(int? id)
-        {
-            ProfileViewModel bookViewModel = new ProfileViewModel();
-            using (SqlConnection sqlConnection = new SqlConnection(_configuration.GetConnectionString("Pilot_Task_ConnectionString")))
-            {
-                DataTable dtbl = new DataTable();
-                sqlConnection.Open();
-                SqlDataAdapter sqlDa = new SqlDataAdapter("ProfileViewByID", sqlConnection);
-                sqlDa.SelectCommand.CommandType = CommandType.StoredProcedure;
-                sqlDa.SelectCommand.Parameters.AddWithValue("ProfileId", id);
-                sqlDa.Fill(dtbl);
-                if (dtbl.Rows.Count == 1)
-                {
-                    bookViewModel.ProfileId = Convert.ToInt32(dtbl.Rows[0]["ProfileId"].ToString());
-                    bookViewModel.FirstName = dtbl.Rows[0]["FirstName"].ToString();
-                    bookViewModel.LastName = dtbl.Rows[0]["LastName"].ToString();
-                    bookViewModel.PhoneNumber = dtbl.Rows[0]["PhoneNumber"].ToString();
-                    bookViewModel.EmailId = dtbl.Rows[0]["EmailId"].ToString();
-                    bookViewModel.DateOfBirth = Convert.ToDateTime(dtbl.Rows[0]["DateOfBirth"].ToString());
-                }
-                return bookViewModel;
             }
         }
     }

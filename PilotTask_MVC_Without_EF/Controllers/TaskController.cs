@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using PilotTask_MVC_Without_EF.DAL;
 using PilotTask_MVC_Without_EF.Models;
 using System;
-using System.Data;
+using System.Threading.Tasks;
 
 namespace PilotTask_MVC_Without_EF.Controllers
 {
@@ -12,147 +12,116 @@ namespace PilotTask_MVC_Without_EF.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger<TaskController> _logger;
-        public TaskController(IConfiguration configuration, ILogger<TaskController> logger)
+        private ITaskDataAccess _taskDataAccess;
+        public TaskController(IConfiguration configuration, ILogger<TaskController> logger, ITaskDataAccess taskDataAccess)
         {
             _configuration = configuration;
             _logger = logger;
+            _taskDataAccess = taskDataAccess;
         }
-        // GET: TaskController
-        public ActionResult Index(int? id)
+        /// <summary>
+        /// Index
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<ActionResult> Index(int? id)
         {
             try
             {
-                DataTable dtbl = new DataTable();
-                using (SqlConnection sqlConnection = new SqlConnection(_configuration.GetConnectionString("Pilot_Task_ConnectionString")))
-                {
-                    if (id != null)
-                    {
-                        sqlConnection.Open();
-                        SqlDataAdapter sqlDa = new SqlDataAdapter("TaskViewAllById", sqlConnection);
-                        sqlDa.SelectCommand.CommandType = CommandType.StoredProcedure;
-                        sqlDa.SelectCommand.Parameters.AddWithValue("ProfileId", id);
-                        sqlDa.Fill(dtbl);
-                    }
-                    else
-                    {
-                        sqlConnection.Open();
-                        SqlDataAdapter sqlDa = new SqlDataAdapter("TaskViewAll", sqlConnection);
-                        sqlDa.SelectCommand.CommandType = CommandType.StoredProcedure;
-                        sqlDa.Fill(dtbl);
-                    }
-                }
-                return View(dtbl);
+                _logger.LogDebug($"Started method for Getting all Task from Database with Id : {id}");
+                var response = await _taskDataAccess.GetAllTask(id);
+                _logger.LogDebug($"Ended method for Getting all Task from Database with Id : {id}");
+                return View(response);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception error");
+                _logger.LogError(ex, "Exception error getting from Index Method");
                 throw;
             }
         }
 
-        // GET: TaskController/Edit/5
-        public ActionResult AddOrEdit(int id)
+        /// <summary>
+        /// AddOrEdit
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<ActionResult> AddOrEdit(int id)
         {
             try
             {
+                _logger.LogDebug($"Started method for Getting the specific Task with Id : {id}");
                 TaskViewModel taskViewModel = new TaskViewModel();
                 if (id > 0)
-                    taskViewModel = FetchTaskByID(id);
+                    taskViewModel = await _taskDataAccess.FetchTaskByID(id);
+                _logger.LogDebug($"Ended method for Getting the specific Task with Id : {id}");
                 return View(taskViewModel);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception error");
+                _logger.LogError(ex, "Exception error getting from AddOrEdit Method");
                 throw;
             }
         }
 
 
-        // POST: TaskController/Edit/5
+        /// <summary>
+        /// AddOrEdit
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="taskViewModel"></param>
+        /// <returns></returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult AddOrEdit(int id, [Bind("Id,ProfileId,TaskName,TaskDescription,StartTime,Status")] TaskViewModel taskViewModel)
         {
             try
             {
+                _logger.LogDebug($"Started method for Create or edit the specific Task with Id : {id}");
                 if (ModelState.IsValid)
                 {
-                    using (SqlConnection sqlConnection = new SqlConnection(_configuration.GetConnectionString("Pilot_Task_ConnectionString")))
-                    {
-                        sqlConnection.Open();
-                        SqlCommand sqlCmd = new SqlCommand("[TaskAddOrEdit]", sqlConnection);
-                        sqlCmd.CommandType = CommandType.StoredProcedure;
-                        sqlCmd.Parameters.AddWithValue("Id", taskViewModel.Id);
-                        sqlCmd.Parameters.AddWithValue("ProfileId", taskViewModel.ProfileId);
-                        sqlCmd.Parameters.AddWithValue("TaskName", taskViewModel.TaskName);
-                        sqlCmd.Parameters.AddWithValue("TaskDescription", taskViewModel.TaskDescription);
-                        sqlCmd.Parameters.AddWithValue("StartTime", taskViewModel.StartTime);
-                        sqlCmd.Parameters.AddWithValue("Status", taskViewModel.Status);
-                        sqlCmd.ExecuteNonQuery();
-                    }
+                    _taskDataAccess.CreateOrEditTask(taskViewModel);
+                    _logger.LogDebug($"Ended method for Create or edit the specific Task with Id : {id}");
                     return RedirectToAction(nameof(Index), new { id = taskViewModel.ProfileId });
                 }
                 return View(taskViewModel);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception error");
+                _logger.LogError(ex, "Exception error getting from AddOrEdit Method");
                 throw;
             }
         }
 
-        // GET: TaskController/Delete/5
+        /// <summary>
+        /// Delete
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public ActionResult Delete(int id)
         {
             return View();
         }
 
-        // POST: TaskController/Delete/5
-        // POST: ProfileViewModels/Delete/5
+        /// <summary>
+        /// DeleteConfirmed
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public IActionResult DeleteConfirmed(int id)
         {
             try
             {
-                using (SqlConnection sqlConnection = new SqlConnection(_configuration.GetConnectionString("Pilot_Task_ConnectionString")))
-                {
-                    sqlConnection.Open();
-                    SqlCommand sqlCmd = new SqlCommand("TaskDeleteByID", sqlConnection);
-                    sqlCmd.CommandType = CommandType.StoredProcedure;
-                    sqlCmd.Parameters.AddWithValue("Id", id);
-                    sqlCmd.ExecuteNonQuery();
-                }
+                _logger.LogDebug($"Started method for Delete specific Task with Id : {id}");
+                _taskDataAccess.DeleteTaskById(id);
+                _logger.LogDebug($"Ended method for Delete specific Task with Id : {id}");
                 return RedirectToAction(nameof(Index), "ProfileViewModels");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception error");
+                _logger.LogError(ex, "Exception error getting from DeleteConfirmed Method");
                 throw;
-            }
-        }
-        [NonAction]
-        public TaskViewModel FetchTaskByID(int? id)
-        {
-            TaskViewModel bookViewModel = new TaskViewModel();
-            using (SqlConnection sqlConnection = new SqlConnection(_configuration.GetConnectionString("Pilot_Task_ConnectionString")))
-            {
-                DataTable dtbl = new DataTable();
-                sqlConnection.Open();
-                SqlDataAdapter sqlDa = new SqlDataAdapter("TaskViewByID", sqlConnection);
-                sqlDa.SelectCommand.CommandType = CommandType.StoredProcedure;
-                sqlDa.SelectCommand.Parameters.AddWithValue("Id", id);
-                sqlDa.Fill(dtbl);
-                if (dtbl.Rows.Count == 1)
-                {
-                    bookViewModel.Id = Convert.ToInt32(dtbl.Rows[0]["Id"].ToString());
-                    bookViewModel.ProfileId = Convert.ToInt32(dtbl.Rows[0]["ProfileId"].ToString());
-                    bookViewModel.TaskName = dtbl.Rows[0]["TaskName"].ToString();
-                    bookViewModel.TaskDescription = dtbl.Rows[0]["TaskDescription"].ToString();
-                    bookViewModel.StartTime = Convert.ToDateTime(dtbl.Rows[0]["StartTime"].ToString());
-                    bookViewModel.Status= Convert.ToInt32(dtbl.Rows[0]["Status"].ToString());
-                }
-                return bookViewModel;
             }
         }
     }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using PilotTask_MVC_Without_EF.DAL;
 
 namespace PilotTask_MVC_Without_EF
 {
@@ -19,6 +20,8 @@ namespace PilotTask_MVC_Without_EF
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+            services.AddTransient<IProfileDataAccess, ProfileDataAccess>();
+            services.AddTransient<ITaskDataAccess, TaskDataAccess>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
